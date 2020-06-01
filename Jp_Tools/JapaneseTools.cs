@@ -2097,8 +2097,6 @@ namespace Jp_Tools
         #endregion
     }
 
-
-
     public class JpString
     {
         public string romaji { get; set; }
