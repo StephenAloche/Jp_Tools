@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.852
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HiraKana", "HiraKana\HiraKana.csproj", "{AE873C34-802A-4CFB-9120-9885791118DE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jp_Tools", "Jp_Tools\Jp_Tools.csproj", "{E66CCC42-0715-491F-93E4-ECB940050291}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjetDeTest", "ProjetDeTest\ProjetDeTest.csproj", "{723AC7C2-3AC1-4D4A-8CB5-F537B9941377}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AE873C34-802A-4CFB-9120-9885791118DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE873C34-802A-4CFB-9120-9885791118DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE873C34-802A-4CFB-9120-9885791118DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE873C34-802A-4CFB-9120-9885791118DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E66CCC42-0715-491F-93E4-ECB940050291}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E66CCC42-0715-491F-93E4-ECB940050291}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E66CCC42-0715-491F-93E4-ECB940050291}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E66CCC42-0715-491F-93E4-ECB940050291}.Release|Any CPU.Build.0 = Release|Any CPU
+		{723AC7C2-3AC1-4D4A-8CB5-F537B9941377}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{723AC7C2-3AC1-4D4A-8CB5-F537B9941377}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{723AC7C2-3AC1-4D4A-8CB5-F537B9941377}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{723AC7C2-3AC1-4D4A-8CB5-F537B9941377}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A14957AE-0452-4F70-B215-A1C194B89839}
+	EndGlobalSection
+EndGlobal
