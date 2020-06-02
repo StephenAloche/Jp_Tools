@@ -242,6 +242,11 @@ namespace Jp_Tools
             Conditionnel = 6,
             Provisional = 7,
         }
+        public enum E_TypeAdj
+        {
+            I = 1,
+            NA = 2,
+        }
         #endregion
 
         #region Verbes

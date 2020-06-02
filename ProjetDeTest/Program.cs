@@ -18,7 +18,7 @@ namespace ProjetDeTest
                 romaji = "oishii",
                 type = "I"
             };
-            var o = JapaneseTools.ConjugAdjectif(adj, Jp_Tools.JapaneseTools.E_TmpsAdj.Present, false, true);
+            var o = JapaneseTools.ConjugAdjectif(adj, Jp_Tools.JapaneseTools.E_TmpsAdj.Provisional, false, true);
             Console.WriteLine(o);
         }
     }
