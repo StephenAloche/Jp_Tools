@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jp_Tools", "Jp_Tools\Jp_Too
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjetDeTest", "ProjetDeTest\ProjetDeTest.csproj", "{723AC7C2-3AC1-4D4A-8CB5-F537B9941377}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestJp_Tools", "TestJp_Tools\TestJp_Tools.csproj", "{457F88D9-5F5D-4512-9C28-B9DF51DBC09E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{723AC7C2-3AC1-4D4A-8CB5-F537B9941377}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{723AC7C2-3AC1-4D4A-8CB5-F537B9941377}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{723AC7C2-3AC1-4D4A-8CB5-F537B9941377}.Release|Any CPU.Build.0 = Release|Any CPU
+		{457F88D9-5F5D-4512-9C28-B9DF51DBC09E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{457F88D9-5F5D-4512-9C28-B9DF51DBC09E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{457F88D9-5F5D-4512-9C28-B9DF51DBC09E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{457F88D9-5F5D-4512-9C28-B9DF51DBC09E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

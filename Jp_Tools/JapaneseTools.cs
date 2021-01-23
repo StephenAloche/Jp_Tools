@@ -2,19 +2,26 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using static Jp_Tools.JapaneseTools;
 
 namespace Jp_Tools
 {
     public static class JapaneseTools
     {
-        //private JpDB db { get; } = new JpDB(Properties.Settings.Default.GCG);
-
         #region adjectif
+        /// <summary>
+        /// Conjugate an Adjective of type AdjectifDll, to the specified tense and with/whithout a polite and/or a negative forme
+        /// </summary>
+        /// <param name="adj"></param>
+        /// <param name="temps"></param>
+        /// <param name="isPolite"></param>
+        /// <param name="isNegatif"></param>
+        /// <returns></returns>
         public static JpString ConjugAdjectif(AdjectifDll adj, E_TmpsAdj temps, bool isPolite, bool isNegatif)
         {
             JpString adjConjug = (JpString)adj;
-            bool isIAdj = adj.type == "I";
+            bool isIAdj = adj.type.ToUpper() == "I";
             string terminaison = "";
             string newTerminaison = "";
 
@@ -59,7 +66,7 @@ namespace Jp_Tools
 
             if (isIAdj)
             {
-                adjConjug.kanji = adjConjug.kanji.Remove(adjConjug.kanji.Count()-1,1) + newTerminaison;// Replace(adjConjug.kanji.Last().ToString(), newTerminaison);
+                adjConjug.kanji = adjConjug.kanji.Remove(adjConjug.kanji.Count() - 1, 1) + newTerminaison;// Replace(adjConjug.kanji.Last().ToString(), newTerminaison);
                 adjConjug.kana = adjConjug.kana.Remove(adjConjug.kana.Count() - 1, 1) + newTerminaison;//.Replace(adjConjug.kana.Last().ToString(), newTerminaison);
 
 
@@ -1517,7 +1524,7 @@ namespace Jp_Tools
                 verbConjug.kanji = verbConjug.kanji.Replace(verbConjug.kanji.Last().ToString(), newTerminaison);
                 verbConjug.kana = verbConjug.kana.Replace(verbConjug.kana.Last().ToString(), newTerminaison);
             }
-            
+
             verbConjug.romaji = KanaTools.ToRomaji(verbConjug.kana);
 
             return verbConjug;
@@ -1839,7 +1846,7 @@ namespace Jp_Tools
         #endregion
 
         #region Number
-        public static List<JpNumber> NumberList = new List<JpNumber>()
+        private static List<JpNumber> NumberList = new List<JpNumber>()
         {
             new JpNumber("0","零","れい","-"),
             new JpNumber("1","一","いち","壱"),
@@ -1854,37 +1861,421 @@ namespace Jp_Tools
             new JpNumber("10","十","じゅう","拾"),
             new JpNumber("100","百","ひゃく",""),
             new JpNumber("1000","千","せん",""),
-            new JpNumber("10000","万","まん","萬	"),
+            new JpNumber("10000","万","まん","萬"),
             new JpNumber("100000000","億","おく",""),
             new JpNumber("1000000000000","兆","ちょう",""),
             new JpNumber("10000000000000000000","京","けい","きょう","")
         };
 
-        public static string GetKanjiNum(ulong chiffre)
+        //private static string GetKanjiNum(ulong chiffre)
+        //{
+        //    return NumberList.FirstOrDefault(n => n.Chiffre == chiffre.ToString()).Kanji;
+        //}
+
+        //private static string GetKanaNum(ulong chiffre, bool kana2lect = false)
+        //{
+        //    JpNumber num = NumberList.FirstOrDefault(n => n.Chiffre == chiffre.ToString());
+        //    string value = num.Kana;
+        //    if (kana2lect && !String.IsNullOrEmpty(num.Kana2lect))
+        //    {
+        //        value += $" / {NumberList.FirstOrDefault(n => n.Chiffre == chiffre.ToString()).Kana2lect}";
+        //    }
+        //    return value;
+        //}
+        
+
+        public static string KanjiToNumber(string kana)
         {
-            return NumberList.FirstOrDefault(n => n.Chiffre == chiffre.ToString()).Kanji;
+            long total = 0;
+            long valUnit = 1;
+            //recuperation de l'unité
+            //on prends le chiffre a la derniere position
+            for (int i = kana.Length - 1; i >= 0; i--)
+            {
+                //on le parse en int
+                long val = GetNumKanji(kana[i].ToString());
+                //quelque chose devant ?
+                if (i > 0)
+                {
+                    //oui
+                    //devant sup à unité ?
+                    long valAvant = GetNumKanji(kana[i - 1].ToString());
+                    if (val % 10 == 0)
+                        valUnit = val;
+                    if (valAvant > valUnit)
+                    {
+                        //oui
+                        //multiplie val par unité actuel
+                        //ajout val au total			
+                        total = val * valUnit;
+                        //stocke unité
+                        valUnit = valAvant;
+                        //continue la boucle
+                    }
+                    else
+                    {
+                        //non
+                        //création de la chaine
+                        string chaine = "";
+
+                        //regarde encore avant
+                        if (i > 1)
+                        {
+
+                            valAvant = GetNumKanji(kana[i - 1].ToString());
+                            long valEncoreAvant = GetNumKanji(kana[i - 2].ToString());
+                            int sur = 100;
+                            //tant que devant est inferieur a l'unité actuel on ajoute a la chaine
+
+                            do
+                            {
+                                //ajout de la valeur avant a la chaine
+                                chaine = kana[i - 1] + chaine;
+                                try
+                                {
+                                    valEncoreAvant = GetNumKanji(kana[i - 2].ToString());
+
+                                }
+                                catch (Exception ex)
+                                {
+                                    valEncoreAvant = valUnit;
+                                }
+
+                                if (valEncoreAvant < valUnit)
+                                {
+                                    i--;
+                                    sur--;
+                                }
+                                else
+                                {
+                                    //recursive
+                                    string result = KanjiToNumber(chaine);
+                                    //ajout du total a l'existant
+                                    total += (long.Parse(result) * valUnit);
+                                    //si devant est sup a l'unité on remplace l'unité
+                                    valUnit = valEncoreAvant;
+                                    //continue la boucle
+                                    i--;
+                                }
+                            } while ((valEncoreAvant < valUnit) && sur > 0);
+                        }
+                    }
+                }
+                else
+                {
+                    //non
+                    total += val * valUnit;
+                    return total.ToString();
+                }
+            }
+            return total.ToString();
+
         }
-        public static string GetKanaNum(ulong chiffre, bool kana2 = false)
+
+        /// <summary>
+        /// Convert a Number to his equivalent in Hiragana or in kanji (legal or not)
+        /// <para>Convertie un nombre vers son équivalent en hiragana ou en kanji (legal ou non)</para>
+        /// </summary>
+        /// <param name="number"></param>
+        /// <param name="kanji"></param>
+        /// <param name="legal"></param>
+        /// <param name="kana2lect"></param>
+        /// <returns></returns>
+        public static string NumberToKana(long number, bool kanji = false, bool legal = false, bool kana2lect = false)
+        {
+            //recuperation de la chaine d'entrée
+            string nbString = number.ToString();
+            string KanjiReturn = "";
+
+
+            char[] charArray = nbString.ToCharArray();
+            Array.Reverse(charArray);
+            var stringReverse = new string(charArray);
+            var spaced = Regex.Replace(stringReverse, ".{4}", "$0 ");
+            char[] charArray2 = spaced.ToCharArray();
+            Array.Reverse(charArray2);
+            var finalString = new string(charArray2);
+            string[] splittedString = finalString.Trim().Split();
+            int loop = 0;
+            string txt = "";
+            for (int i = splittedString.Length - 1; i >= 0; i--)
+            {
+                switch (loop)
+                {
+                    case 1:
+                        //'万'
+                        if (kanji)
+                        {
+                            txt = GetKanjiNum(10000, legal);
+                        }
+                        else
+                        {
+                            txt = GetKanaNum(10000, kana2lect);
+                        }
+                        break;
+                    case 2:
+                        //'億'
+                        if (kanji)
+                        {
+                            txt = GetKanjiNum(100000000, legal);
+
+                        }
+                        else
+                        {
+                            txt = GetKanaNum(100000000, kana2lect);
+                        }
+                        break;
+                    case 3:
+                        //'億'
+                        if (kanji)
+                        {
+                            txt = GetKanjiNum(100000000, legal);
+
+                        }
+                        else
+                        {
+                            txt = GetKanaNum(100000000, kana2lect);
+                        }
+                        break;
+                    case 4:
+                        //'兆'
+                        if (kanji)
+                        {
+                            txt = GetKanjiNum(1000000000000, legal);
+
+                        }
+                        else
+                        {
+                            txt = GetKanaNum(1000000000000, kana2lect);
+                        }
+                        break;
+                    case 5:
+                        //'京'
+                        if (kanji)
+                        {
+                            txt = GetKanjiNum(10000000000000000000, legal);
+
+                        }
+                        else
+                        {
+                            txt = GetKanaNum(10000000000000000000, kana2lect);
+                        }
+                        break;
+                }
+                KanjiReturn = KanjiReturn.Insert(0, txt);
+                loop++;
+
+                string group = splittedString[i];
+
+                int pos = group.Length;
+                string substring = "";
+                foreach (char chiffre in group)
+                {
+                    //Verification de la position du chiffre dans la chaine
+                    //Recuperation depuis le dictionnaire
+                    //avec gestion particuliere du zero
+                    string val = "";
+                    if (chiffre != '0')
+                    {
+                        if (chiffre == '1' && (pos == 2 || pos == 3 || pos == 4 || pos == 6 || pos == 7 || pos == 10 || pos == 11))
+                        {
+                            //on affiche le 1 pour des cas particulier (万 et　億)
+                            if (kanji)
+                            {
+                                substring += GetKanjiNum(ulong.Parse(chiffre.ToString()), legal);
+                            }
+                            else
+                            {
+                                substring += GetKanaNum(ulong.Parse(chiffre.ToString()), kana2lect);
+                            }
+                        }
+                        else
+                        {
+                            if (kanji)
+                            {
+                                substring += GetKanjiNum(ulong.Parse(chiffre.ToString()), legal);
+                            }
+                            else
+                            {
+                                substring += GetKanaNum(ulong.Parse(chiffre.ToString()), kana2lect);
+                            }
+                        }
+
+                        if (pos == 2 || pos == 6 || pos == 10 || pos == 14)//100 000
+                        {
+                            if (kanji)
+                            {
+                                substring += GetKanjiNum(10, legal);
+
+                            }
+                            else
+                            {
+                                substring += GetKanaNum(10, kana2lect);
+                            }
+                            //substring += "十"; //10
+                        }
+                        if (pos == 3 || pos == 7 || pos == 11 || pos == 15)
+                        {
+                            //check le chiffre pour savoir si une regle d'ecriture special s'applique
+                            //substring += "百";//100
+                            if (kanji)
+                            {
+                                substring += GetKanjiNum(100, legal);
+
+                            }
+                            else
+                            {
+                                substring += GetKanaNum(100, kana2lect);
+                            }
+                        }
+                        if (pos == 4 || pos == 8 || pos == 12)
+                        {
+                            //substring += "千";//1000
+                            if (kanji)
+                            {
+                                substring += GetKanjiNum(1000, legal);
+
+                            }
+                            else
+                            {
+                                substring += GetKanaNum(1000, kana2lect);
+                            }
+                        }
+                        if (pos == 5 || (pos > 5 && pos < 9))
+                        {
+                            //substring += "万";//10 000
+                            if (kanji)
+                            {
+                                substring += GetKanjiNum(10000, legal);
+
+                            }
+                            else
+                            {
+                                substring += GetKanaNum(10000, kana2lect);
+                            }
+                        }
+                        if (pos == 9 || (pos > 9 && pos < 13))
+                        {
+                            //substring += "億";//100 000 000　おく
+                            if (kanji)
+                            {
+                                substring += GetKanjiNum(100000000, legal);
+
+                            }
+                            else
+                            {
+                                substring += GetKanaNum(100000000, kana2lect);
+                            }
+                        }
+                        if (pos == 13 || (pos > 13 && pos < 20))
+                        {
+                            //substring += "兆";//1000 000 000 000　ちょう
+                            if (kanji)
+                            {
+                                substring += GetKanjiNum(1000000000, legal);
+
+                            }
+                            else
+                            {
+                                substring += GetKanaNum(1000000000, kana2lect);
+                            }
+                        }
+                        if (pos == 20)
+                        {
+                            //substring += "京";//10 000 000 000 000 000 000　けい
+                            if (kanji)
+                            {
+                                substring += GetKanjiNum(10000000000000000000, legal);
+
+                            }
+                            else
+                            {
+                                substring += GetKanaNum(10000000000000000000, kana2lect);
+                            }
+                        }
+
+                    }
+                    else if (chiffre == '0' && nbString.Length == 1)
+                    {
+                        //substring += "零";
+                        if (kanji)
+                        {
+                            substring += GetKanjiNum(0, legal);
+
+                        }
+                        else
+                        {
+                            substring += GetKanaNum(0, kana2lect);
+                        }
+                    }
+                    pos--;
+                }
+
+                KanjiReturn = KanjiReturn.Insert(0, substring);
+            }
+            //decompoition de celle ci
+            //bouce ur chacun des chiffres
+            //en fonctin de sa position ajouter ou non les signes 
+            if (!kanji)
+            {
+                //gestion des exception
+                //300
+                if (KanjiReturn.Contains("さんひゃく"))
+                    KanjiReturn = KanjiReturn.Replace("さんひゃく", "さんびゃく");
+                //600
+                if (KanjiReturn.Contains("ろくひゃく"))
+                    KanjiReturn = KanjiReturn.Replace("ろくひゃく", "ろっぴゃく");
+                //800
+                if (KanjiReturn.Contains("はちひゃく"))
+                    KanjiReturn = KanjiReturn.Replace("はちひゃく", "はっぴゃく");
+                //3000
+                if (KanjiReturn.Contains("さんせん"))
+                    KanjiReturn = KanjiReturn.Replace("さんせん", "さんぜん");
+                //1000000
+                if (KanjiReturn.Contains("いちせんまん"))
+                    KanjiReturn = KanjiReturn.Replace("いちせんまん", "いっせんまん");
+            }
+            return KanjiReturn;
+        }
+
+
+        private static string GetKanjiNum(ulong chiffre, bool legal = false)
+        {
+            JpNumber num = NumberList.FirstOrDefault(n => n.Chiffre == chiffre.ToString());
+            if (legal && !String.IsNullOrEmpty(num.Legal))
+            {
+                return num.Legal;
+            }
+            else
+            {
+                return num.Kanji;
+            }
+        }
+        private static string GetKanaNum(ulong chiffre, bool kana2lect = false, bool legal = false)
         {
             JpNumber num = NumberList.FirstOrDefault(n => n.Chiffre == chiffre.ToString());
             string value = num.Kana;
-            if (kana2 && !String.IsNullOrEmpty(num.Kana2))
+            if (kana2lect && !String.IsNullOrEmpty(num.Kana2lect))
             {
-                value += $" / {NumberList.FirstOrDefault(n => n.Chiffre == chiffre.ToString()).Kana2}";
+                value += $" / {NumberList.FirstOrDefault(n => n.Chiffre == chiffre.ToString()).Kana2lect}";
             }
             return value;
         }
-        public static long GetNumKanji(string kanji)
+        private static long GetNumKanji(string kanji, bool legal = false)
         {
-            return long.Parse(NumberList.FirstOrDefault(n => n.Kanji == kanji).Chiffre);
+            JpNumber num = NumberList.FirstOrDefault(n => n.Kanji == kanji);
+            if (legal)
+            {
+                num = NumberList.FirstOrDefault(n => n.Legal == kanji);
+            }
+            return long.Parse(num.Chiffre);
         }
-
         public class JpNumber
         {
             public string Chiffre { get; set; }
             public string Kanji { get; set; }
             public string Kana { get; set; }
-            public string Kana2 { get; set; }
+            public string Kana2lect { get; set; }
             public string Legal { get; set; }
 
             public JpNumber()
@@ -1899,205 +2290,14 @@ namespace Jp_Tools
                 Legal = legal;
             }
 
-            public JpNumber(string chiffre, string kanji, string kana, string kana2, string legal)
+            public JpNumber(string chiffre, string kanji, string kana, string kana2lect, string legal)
             {
                 this.Chiffre = chiffre;
                 Kanji = kanji;
                 Kana = kana;
-                Kana2 = kana2;
+                Kana2lect = kana2lect;
                 Legal = legal;
             }
-        }
-
-        public static string NumberToKanji(long number)
-        {
-            //recuperation de la chaine d'entrée
-            string nbString = number.ToString();
-            string KanjiReturn = "";
-            int pos = nbString.Length;
-            foreach (char chiffre in nbString)
-            {
-                //Verification de la position du chiffre dans la chaine
-                //Recuperation depuis le dictionnaire
-                //avec gestion particuliere du zero
-                string val = "";
-                if (chiffre != '0')
-                {
-                    if (chiffre == '1' && (pos == 2 || pos == 3 || pos == 4 || pos == 6 || pos == 7 || pos == 10 || pos == 11))
-                    {
-                        //on affiche le 1 pour des cas particulier (万 et　億)
-                    }
-                    else
-                    {
-                        KanjiReturn += GetKanjiNum(ulong.Parse(chiffre.ToString()));// JapaneseTools.DicoChiffre[chiffre.ToString()];
-                    }
-
-                    if (pos == 2 || pos == 6 || pos == 10 || pos == 14)//100 000
-                    {
-                        KanjiReturn += "十"; //10
-                    }
-                    if (pos == 3 || pos == 7 || pos == 11 || pos == 15)
-                    {
-                        //check le chiffre pour savoir si une regle d'ecriture special s'applique
-                        KanjiReturn += "百";//100
-                    }
-                    if (pos == 4 || pos == 8 || pos == 12)
-                    {
-                        KanjiReturn += "千";//1000
-                    }
-                    if (pos == 5 || (pos > 5 && pos < 9))
-                    {
-                        KanjiReturn += "万";//10 000
-                    }
-                    if (pos == 9 || (pos > 9 && pos < 13))
-                    {
-                        KanjiReturn += "億";//100 000 000　おく
-                    }
-                    if (pos == 13 || (pos > 13 && pos < 20))
-                    {
-                        KanjiReturn += "兆";//1000 000 000 000　ちょう
-                    }
-                    if (pos == 20)
-                    {
-                        KanjiReturn += "京";//10 000 000 000 000 000 000　けい
-                    }
-
-                }
-                else if (chiffre == '0' && nbString.Length == 1)
-                {
-                    KanjiReturn += "零";
-                }
-                pos--;
-            }
-            //decompoition de celle ci
-            //bouce ur chacun des chiffres
-            //en fonctin de sa position ajouter ou non les signes 
-            return KanjiReturn;
-        }
-
-        public static string KanjiToNumber(string kana)
-        {
-            string ReturnNumber = "";
-            //pour chaque position on parse sa valeur en fonction de la valeur dans le dictionnaire
-            long total = 0;
-            int pallier = 10000; // modifier avec les pallier encore plus grand
-                                 //on prends le chiffre a la derniere position
-            for (int i = kana.Length; i > 0; i--)
-            {
-
-                //on le parse en int
-                long val = JapaneseTools.GetNumKanji(kana[i - 1].ToString());// long.Parse(DicoChiffre[kana[i - 1].ToString()]);
-                long valAvant = 1;
-                try
-                {
-                    //on recupere le character d'avant au cas ou on aurai une dizaine
-                    valAvant = JapaneseTools.GetNumKanji(kana[i - 2].ToString());//long.Parse(DicoChiffre[kana[i - 2].ToString()]);
-                    if (valAvant > 1 && valAvant < 10)
-                    {
-                        val *= valAvant;
-                        i--;
-                        valAvant = JapaneseTools.GetNumKanji(kana[i - 2].ToString());//long.Parse(DicoChiffre[kana[i - 2].ToString()]);
-                    }
-
-                    //si c'est un millier ou dix millier au sauté le chiffre d'avant si c'est un un
-                    if ((val == 1000 || val == 10000) && valAvant == 1)
-                    {
-                        i--;
-                    }
-                }
-                catch (Exception)
-                {
-                    valAvant = 1;
-                }
-
-                if (total > pallier)
-                {
-                    val *= pallier;
-                    //modifier le pallier avec les pallier plus grand ici
-                }
-
-                total += val;
-
-            }
-            return total.ToString();
-        }
-
-        public static string NumberToKana(long number, bool kana2 = false)
-        {
-            //recuperation de la chaine d'entrée
-            string nbString = number.ToString();
-            string KanaReturn = "";
-            int pos = nbString.Length;
-            foreach (char chiffre in nbString)
-            {
-                //Verification de la position du chiffre dans la chaine
-                //Recuperation depuis le dictionnaire
-                //avec gestion particuliere du zero
-                string val = "";
-                if (chiffre != '0')
-                {
-                    if (chiffre == '1' && (pos == 2 || pos == 3 || pos == 4 || pos == 6 || pos == 7 || pos == 10 || pos == 11))
-                    {
-                        //on affiche le 1 pour des cas particulier (万 et　億)
-                    }
-                    else
-                    {
-                        KanaReturn += JapaneseTools.GetKanaNum(ulong.Parse(chiffre.ToString()), kana2);// JapaneseTools.DicoChiffre[chiffre.ToString()];
-                    }
-
-                    if (pos == 2 || pos == 6 || pos == 10 || pos == 14)//100 000
-                    {
-                        KanaReturn += JapaneseTools.GetKanaNum(10); //"じゅう";
-                    }
-                    if (pos == 3 || pos == 7 || pos == 11 || pos == 15)
-                    {
-                        //check le chiffre pour savoir si une regle d'ecriture special s'applique
-                        KanaReturn += JapaneseTools.GetKanaNum(100);//"ひゃく";//100
-                    }
-                    if (pos == 4 || pos == 8 || pos == 12)
-                    {
-                        KanaReturn += JapaneseTools.GetKanaNum(1000);//"せん";//1000
-                    }
-                    if (pos == 5 || (pos > 5 && pos < 9))
-                    {
-                        KanaReturn += JapaneseTools.GetKanaNum(10000);//"まん";//10 000
-                    }
-                    if (pos == 9 || (pos > 9 && pos < 13))
-                    {
-                        KanaReturn += JapaneseTools.GetKanaNum(100000000);//"おく";//100 000 000　おく
-                    }
-                    if (pos == 13 || (pos > 13 && pos < 20))
-                    {
-                        KanaReturn += JapaneseTools.GetKanaNum(1000000000000);//"ちゅう";//1000 000 000 000　ちょう
-                    }
-                    if (pos == 20)
-                    {
-                        KanaReturn += JapaneseTools.GetKanaNum(10000000000000000000);//"けい";//10 000 000 000 000 000 000　けい
-                    }
-                }
-                else if (chiffre == '0' && nbString.Length == 1)
-                {
-                    KanaReturn += JapaneseTools.GetKanaNum(0);//"れい";
-                }
-                pos--;
-            }
-            //gestion des exception
-            //300
-            if (KanaReturn.Contains("さんひゃく"))
-                KanaReturn = KanaReturn.Replace("さんひゃく", "さんびゃく");
-            //600
-            if (KanaReturn.Contains("ろくひゃく"))
-                KanaReturn = KanaReturn.Replace("ろくひゃく", "ろっぴゃく");
-            //800
-            if (KanaReturn.Contains("はちひゃく"))
-                KanaReturn = KanaReturn.Replace("はちひゃく", "はっぴゃく");
-            //3000
-            if (KanaReturn.Contains("さんせん"))
-                KanaReturn = KanaReturn.Replace("さんせん", "さんぜん");
-            //3000
-            if (KanaReturn.Contains("いちせんまん"))
-                KanaReturn = KanaReturn.Replace("いちせんまん", "いっせんまん");
-            return KanaReturn;
         }
         #endregion
     }
@@ -2123,8 +2323,32 @@ namespace Jp_Tools
 
         public string GetRomaji()
         {
-
             return KanaTools.ToRomaji(kana);
+        }
+
+
+        public override bool Equals(System.Object obj)
+        {
+            //If the obj argument is null return false  
+            if (obj == null)
+                return false;
+            //If both the references points to the same object then only return true  
+            if (this == obj)
+                return true;
+
+            //If this and obj are referring to different type return false  
+            if (this.GetType() != obj.GetType())
+                return false;
+
+            //Compare each field of this object with respective field of obj object  
+            JpString test = (JpString)obj;
+            if (this.romaji == test.romaji &&
+            this.kana == test.kana &&
+            this.kanji == test.kanji)
+            {
+                return true;
+            }
+            return false;
         }
     }
 
@@ -2136,6 +2360,13 @@ namespace Jp_Tools
         public string romaji { get; set; }
         public string type { get; set; }
 
+        /// <summary>
+        /// Create an AdjectifDll object
+        /// </summary>
+        /// <param name="furigana">the furigana writing of the adjective</param>
+        /// <param name="kanji">the kanji writing of the adjective</param>
+        /// <param name="romaji">the romaji writing of the adjective</param>
+        /// <param name="type">the type of the adjective (I or NA)</param>
         public AdjectifDll(string furigana, string kanji, string romaji, string type)
         {
             this.furigana = furigana;
@@ -2154,18 +2385,25 @@ namespace Jp_Tools
         public string romaji { get; set; }
         public E_TypeVerb type { get; set; }
 
+        /// <summary>
+        /// Create a VerbeDll object
+        /// </summary>
+        /// <param name="furigana">the furigana writing of the Verbe</param>
+        /// <param name="kanji">the kanji writing of the Verbe</param>
+        /// <param name="romaji">the romaji writing of the Verbe</param>
+        /// <param name="type">the type of the Verbe (Ichidan, Godan, Iku, Kuru, Tsuru)</param>
         public VerbeDll(string furigana, string kanji, string romaji, string type)
         {
             this.furigana = furigana;
             this.kanji = kanji;
             this.romaji = romaji;
 
-            switch (type)
+            switch (type.ToUpper())
             {
-                case "Ichidan":
+                case "ICHIDAN":
                     this.type = E_TypeVerb.Ichidan;
                     break;
-                case "Godan":
+                case "GODAN":
                     this.type = E_TypeVerb.Godan;
                     break;
                 case "IKU":
@@ -2180,6 +2418,13 @@ namespace Jp_Tools
                 default:
                     break;
             }
+        }
+        public VerbeDll(string furigana, string kanji, string romaji, E_TypeVerb type)
+        {
+            this.furigana = furigana;
+            this.kanji = kanji;
+            this.romaji = romaji;
+            this.type = type;
         }
     }
 }
